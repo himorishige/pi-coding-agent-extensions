@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { uuidv7 } from "@earendil-works/pi-ai";
+import { uuidv7, type ThinkingLevel } from "@earendil-works/pi-ai";
 import {
   DynamicBorder,
   type ExtensionAPI,
@@ -16,12 +16,14 @@ const MAX_CAPTURED_TEXT_LENGTH = 12_000;
 const MAX_SMART_INPUT_LENGTH = 6_000;
 const MAX_LINE_SOURCE_LENGTH = 240;
 const DEFAULT_SMART_TIMEOUT_MS = 30_000;
+const SMART_MAX_TOKENS = 1_024;
 
 type RecapMode = "off" | "fast" | "smart";
 
 type RecapConfig = {
   mode?: RecapMode;
   model?: string;
+  thinkingLevel?: ThinkingLevel;
   timeoutMs?: number;
 };
 
@@ -84,6 +86,17 @@ function isRecapMode(value: unknown): value is RecapMode {
   return value === "off" || value === "fast" || value === "smart";
 }
 
+function isThinkingLevel(value: unknown): value is ThinkingLevel {
+  return (
+    value === "minimal" ||
+    value === "low" ||
+    value === "medium" ||
+    value === "high" ||
+    value === "xhigh" ||
+    value === "max"
+  );
+}
+
 async function loadConfig(): Promise<RecapConfig> {
   try {
     const parsed = JSON.parse(await readFile(configPath(), "utf8")) as unknown;
@@ -107,6 +120,14 @@ async function loadConfig(): Promise<RecapConfig> {
         throw new Error("model must use provider/model format");
       }
       config.model = record.model.trim();
+    }
+    if (record.thinkingLevel !== undefined) {
+      if (!isThinkingLevel(record.thinkingLevel)) {
+        throw new Error(
+          "thinkingLevel must be minimal, low, medium, high, xhigh, or max",
+        );
+      }
+      config.thinkingLevel = record.thinkingLevel;
     }
     if (record.timeoutMs !== undefined) {
       if (
@@ -540,6 +561,7 @@ async function generateSmartRecap(
   state: RunState,
   fallback: Recap,
   modelReference: string | undefined,
+  thinkingLevel: ThinkingLevel | undefined,
   timeoutMs: number,
   controller: AbortController,
 ): Promise<Recap> {
@@ -579,8 +601,9 @@ async function generateSmartRecap(
       },
       {
         signal: controller.signal,
-        maxTokens: 320,
+        maxTokens: SMART_MAX_TOKENS,
         temperature: 0.1,
+        reasoningEffort: thinkingLevel,
         cacheRetention: "none",
         sessionId: uuidv7(),
       },
@@ -593,7 +616,14 @@ async function generateSmartRecap(
       .map((content) => content.text)
       .join("\n");
     const smart = parseSmartRecap(text);
-    if (!smart) throw new Error("model returned an invalid recap");
+    if (!smart) {
+      const blockTypes = [
+        ...new Set(response.content.map((content) => content.type)),
+      ].join(",");
+      throw new Error(
+        `model returned an invalid recap (text=${text.length}, blocks=${blockTypes || "none"})`,
+      );
+    }
     return mergeSmartRecap(fallback, smart);
   } finally {
     clearTimeout(timeout);
@@ -604,6 +634,7 @@ export default function turnRecap(pi: ExtensionAPI) {
   let mode: RecapMode = "fast";
   let previousMode: Exclude<RecapMode, "off"> = "fast";
   let smartModelReference: string | undefined;
+  let smartThinkingLevel: ThinkingLevel | undefined;
   let smartTimeoutMs = DEFAULT_SMART_TIMEOUT_MS;
   let state = createRunState();
   let lastRecap: Recap = { lines: [] };
@@ -694,6 +725,7 @@ export default function turnRecap(pi: ExtensionAPI) {
       mode = config.mode ?? "fast";
       if (mode !== "off") previousMode = mode;
       smartModelReference = config.model;
+      smartThinkingLevel = config.thinkingLevel;
       smartTimeoutMs = config.timeoutMs ?? DEFAULT_SMART_TIMEOUT_MS;
       if (mode === "smart" && smartModelReference) {
         const modelError = modelReferenceError(ctx, smartModelReference);
@@ -709,6 +741,7 @@ export default function turnRecap(pi: ExtensionAPI) {
       mode = "fast";
       previousMode = "fast";
       smartModelReference = undefined;
+      smartThinkingLevel = undefined;
       smartTimeoutMs = DEFAULT_SMART_TIMEOUT_MS;
       if (ctx.hasUI) {
         const message = error instanceof Error ? error.message : String(error);
@@ -784,9 +817,10 @@ export default function turnRecap(pi: ExtensionAPI) {
     let recap = fallback;
 
     if (mode === "smart" && ctx.mode === "tui") {
-      const modelLabel =
+      const modelBase =
         smartModelReference ??
         (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "current model");
+      const modelLabel = `${modelBase}${smartThinkingLevel ? `:${smartThinkingLevel}` : ""}`;
       const controller = new AbortController();
       activeSummaryController?.abort();
       activeSummaryController = controller;
@@ -797,6 +831,7 @@ export default function turnRecap(pi: ExtensionAPI) {
           settledState,
           fallback,
           smartModelReference,
+          smartThinkingLevel,
           smartTimeoutMs,
           controller,
         );
@@ -872,7 +907,7 @@ export default function turnRecap(pi: ExtensionAPI) {
       if (ctx.hasUI) {
         const model =
           mode === "smart"
-            ? ` (${smartModelReference ?? "current model"})`
+            ? ` (${smartModelReference ?? "current model"}${smartThinkingLevel ? `:${smartThinkingLevel}` : ""})`
             : "";
         ctx.ui.notify(`Turn recap: ${mode}${model}`, "info");
       }

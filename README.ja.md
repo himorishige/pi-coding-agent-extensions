@@ -73,11 +73,12 @@ turn recap の既定は fast mode です。起動時から smart mode を使う�
 {
   "mode": "smart",
   "model": "switchyard/weak-only",
+  "thinkingLevel": "low",
   "timeoutMs": 30000
 }
 ```
 
-`model` は省略可能で、`provider/model` 形式で指定します。省略時は利用中のモデルを使います。smart mode は、取得した最終回答と決定的に抽出した recap の事実を別の completion としてモデルへ送ります。要約の要求と応答はメインの会話履歴へ追加しません。出力形式の不正、モデルの利用不可、timeout が発生したターンは fast mode へフォールバックします。
+`model` は省略可能で、`provider/model` 形式で指定します。省略時は利用中のモデルを使います。`thinkingLevel` も省略可能で、`minimal`、`low`、`medium`、`high`、`xhigh`、`max` を指定できます。短い JSON 応答には通常 `low` で十分です。smart mode は、取得した最終回答と決定的に抽出した recap の事実を別の completion としてモデルへ送ります。要約の要求と応答はメインの会話履歴へ追加しません。出力形式の不正、モデルの利用不可、timeout が発生したターンは fast mode へフォールバックします。
 
 plan mode は操作ミスを減らすための guardrail であり、OS-level sandbox ではありません。Bash の shell control operator と既知の書き込み option は拒否しますが、残した read tool は Pi process が読めるファイルへアクセスできます。強い境界が必要な場合は permission rule または sandbox を併用してください。
 

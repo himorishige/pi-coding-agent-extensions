@@ -73,11 +73,12 @@ Turn recap defaults to fast mode. To enable smart mode at startup, create `$PI_C
 {
   "mode": "smart",
   "model": "switchyard/weak-only",
+  "thinkingLevel": "low",
   "timeoutMs": 30000
 }
 ```
 
-The `model` is optional and uses `provider/model` format. When omitted, smart mode uses the active model. Smart mode sends the captured final assistant text and deterministic recap facts to that model in a separate completion; it does not append the recap request or response to the main conversation. Invalid output, unavailable models, and timeouts fall back to fast mode for that turn.
+The `model` is optional and uses `provider/model` format. When omitted, smart mode uses the active model. `thinkingLevel` is also optional and accepts `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`; `low` is usually sufficient for the short JSON response. Smart mode sends the captured final assistant text and deterministic recap facts to that model in a separate completion; it does not append the recap request or response to the main conversation. Invalid output, unavailable models, and timeouts fall back to fast mode for that turn.
 
 Plan mode is a convenience guardrail, not an OS-level sandbox. Its Bash allowlist blocks shell control operators and known mutating options, but the remaining read tools can still access files readable by the Pi process. Use permission rules or a sandbox when you need a stronger boundary.
 

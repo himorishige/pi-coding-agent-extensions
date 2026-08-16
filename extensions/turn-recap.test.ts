@@ -162,7 +162,11 @@ async function createHarness(options: HarnessOptions = {}) {
   process.env.PI_CODING_AGENT_DIR = directory;
   await writeFile(
     join(directory, "turn-recap.json"),
-    JSON.stringify({ mode: "smart", model: "switchyard/weak-only" }),
+    JSON.stringify({
+      mode: "smart",
+      model: "switchyard/weak-only",
+      thinkingLevel: "low",
+    }),
   );
 
   const handlers = new Map<string, Handler>();
@@ -175,6 +179,7 @@ async function createHarness(options: HarnessOptions = {}) {
   let editorText = options.editorText ?? "";
   let completionCalls = 0;
   let customCalls = 0;
+  let lastRequestOptions: Record<string, unknown> | undefined;
   const statuses: Array<string | undefined> = [];
   const notifications: string[] = [];
   const model = { provider: "switchyard", id: "weak-only" };
@@ -228,6 +233,7 @@ async function createHarness(options: HarnessOptions = {}) {
       hasConfiguredAuth: () => true,
       complete: async (...args: unknown[]) => {
         completionCalls += 1;
+        lastRequestOptions = args[2] as Record<string, unknown>;
         return (options.completion ?? defaultCompletion)(...args);
       },
     },
@@ -246,6 +252,9 @@ async function createHarness(options: HarnessOptions = {}) {
     },
     get customCalls() {
       return customCalls;
+    },
+    get lastRequestOptions() {
+      return lastRequestOptions;
     },
     get editorText() {
       return editorText;
@@ -283,6 +292,8 @@ test("smart mode uses a separate completion and Enter prefills the editor", asyn
     await harness.settle();
 
     assert.equal(harness.completionCalls, 1);
+    assert.equal(harness.lastRequestOptions?.reasoningEffort, "low");
+    assert.equal(harness.lastRequestOptions?.maxTokens, 1_024);
     assert.equal(harness.editorText, "READMEに使い方を追記してください。");
     assert.equal(harness.statuses.at(-1), undefined);
   } finally {
