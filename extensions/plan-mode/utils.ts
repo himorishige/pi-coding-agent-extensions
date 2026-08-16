@@ -42,8 +42,9 @@ const DESTRUCTIVE_PATTERNS = [
   /\bservice\s+\S+\s+(start|stop|restart)/i,
   /\b(vim?|nano|emacs|code|subl)\b/i,
   /\bfind\b[^\n]*(?:-delete|-exec(?:dir)?|-ok(?:dir)?|-fprint|-fprintf|-fls)\b/i,
-  /\bsort\b[^\n]*(?:\s-o\b|--output(?:=|\s))/i,
-  /\buniq\b[^\n]*(?:\s-o\b|--output(?:=|\s))/i,
+  /\bsort\b[^\n]*(?:\s-o\S*|--output(?:=|\s))/i,
+  /\buniq\b[^\n]*(?:\s-o\S*|--output(?:=|\s))/i,
+  /\btree\b[^\n]*(?:\s-o\S*|--output(?:=|\s))/i,
   /\bsed\b[^\n]*\s-i(?:[^\s]*)/i,
 ];
 
