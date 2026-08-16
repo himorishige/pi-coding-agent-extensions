@@ -6,12 +6,12 @@
 
 ## 収録している extension
 
-| extension       | 追加するもの                                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `focus-ui`      | 折りたたみ時の Bash 成功出力を隠し、エラーは表示したままにします。Footer はモデル、Git、コンテキスト使用率をまとめた表示へ置き換えます |
-| `turn-recap`    | agent の処理後に短い recap を表示し、任意でモデルによる要約と次の作業の入力欄へのセットを行います                                      |
-| `questionnaire` | 単一または複数の質問を、選択肢とタブ付きの TUI で確認する tool を追加します                                                            |
-| `plan-mode`     | 読み取り専用の調査、plan ファイルの保存、実行中の進捗表示を追加します。TUI での確認には `questionnaire` を使います                     |
+| extension       | 追加するもの                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `focus-ui`      | 折りたたみ時の Bash 成功出力を隠し、Footer にモデル、thinking level、Git、コンテキスト使用率を表示します           |
+| `turn-recap`    | agent の処理後に短い recap を表示し、任意でモデルによる要約と次の作業の入力欄へのセットを行います                  |
+| `questionnaire` | 単一または複数の質問を、選択肢とタブ付きの TUI で確認する tool を追加します                                        |
+| `plan-mode`     | 読み取り専用の調査、plan ファイルの保存、実行中の進捗表示を追加します。TUI での確認には `questionnaire` を使います |
 
 `questionnaire` と `plan-mode` の初期実装は `earendil-works/pi` の example を基にしています。帰属とライセンスは [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しました。このリポジトリの plan mode には、plan ファイルの保存と出力先の安全検査を追加しています。
 
@@ -19,7 +19,7 @@
 
 ### Focus UI Footer
 
-利用中のモデル、作業ディレクトリ、Git の状態、コンテキスト使用率、compaction 回数を 1 行で確認できます。
+利用中のモデルと thinking level、作業ディレクトリ、Git の状態、コンテキスト使用率、compaction 回数を 1 行で確認できます。モデルと thinking は Pi と同じ `model:level` 形式で表示します。
 
 ![利用中のモデル、Git の状態、コンテキスト使用率を表示する Focus UI Footer](docs/images/focus-ui-footer.png)
 
@@ -78,7 +78,11 @@ turn recap の既定は fast mode です。起動時から smart mode を使う�
 }
 ```
 
-`model` は省略可能で、`provider/model` 形式で指定します。省略時は利用中のモデルを使います。`thinkingLevel` も省略可能で、`minimal`、`low`、`medium`、`high`、`xhigh`、`max` を指定できます。短い JSON 応答には通常 `low` で十分です。smart mode は、取得した最終回答と決定的に抽出した recap の事実を別の completion としてモデルへ送ります。要約の要求と応答はメインの会話履歴へ追加しません。出力形式の不正、モデルの利用不可、timeout が発生したターンは fast mode へフォールバックします。
+`model` は省略可能で、`provider/model` 形式で指定します。省略時は利用中のモデルを使います。`thinkingLevel` も省略可能で、`minimal`、`low`、`medium`、`high`、`xhigh`、`max` を指定できます。短い JSON 応答には通常 `low` で十分です。
+
+smart mode は、取得した最終回答と決定的に抽出した recap の事実を別の completion としてモデルへ送ります。要約の要求と応答はメインの会話履歴へ追加しません。モデルが書き換えるのは、要約、次の作業、入力欄へ渡す prompt だけです。変更ファイルと検証結果は tool 実行履歴から決定的に抽出します。出力形式の不正、provider error、モデルの利用不可、timeout が発生したターンは fast mode へフォールバックします。
+
+入力欄へ渡す prompt がある場合、Recap の下部に `Enter: 次の作業を入力欄へ` と表示します。`Enter` は prompt を入力しますが、自動送信しません。prompt が適切でない場合は閉じる操作だけを表示します。`/recap on` で直近の Recap を再表示できます。
 
 plan mode は操作ミスを減らすための guardrail であり、OS-level sandbox ではありません。Bash の shell control operator と既知の書き込み option は拒否しますが、残した read tool は Pi process が読めるファイルへアクセスできます。強い境界が必要な場合は permission rule または sandbox を併用してください。
 

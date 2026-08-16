@@ -26,6 +26,14 @@ function shorten(value: string, maxWidth: number): string {
   return truncateToWidth(value, maxWidth, "…");
 }
 
+export function formatModelLabel(
+  modelName: string | undefined,
+  thinkingLevel: string | undefined,
+): string {
+  const model = shorten(modelName || "?", MODEL_MAX_LENGTH);
+  return `${model}:${thinkingLevel || "off"}`;
+}
+
 function getTextOutput(result: {
   content: Array<{ type: string; text?: string }>;
 }): string {
@@ -175,9 +183,9 @@ export default function focusUi(pi: ExtensionAPI) {
         },
         invalidate() {},
         render(width: number): string[] {
-          const model = shorten(
-            ctx.model?.name || ctx.model?.id || "?",
-            MODEL_MAX_LENGTH,
+          const model = formatModelLabel(
+            ctx.model?.name || ctx.model?.id,
+            ctx.thinkingLevel,
           );
           const directory = shorten(
             basename(ctx.cwd) || "?",

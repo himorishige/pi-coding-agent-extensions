@@ -6,12 +6,12 @@ A small collection of [Pi coding agent](https://pi.dev/) extensions that I use f
 
 ## Extensions
 
-| Extension       | What it adds                                                                                                                                              |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `focus-ui`      | Hides successful Bash tool output in the collapsed view, keeps errors visible, and replaces the footer with a compact model, Git, and context status line |
-| `turn-recap`    | Shows a short recap after the agent settles, optionally rewrites it with a model, and can prefill the suggested next action in the editor                 |
-| `questionnaire` | Adds a structured single- or multi-question tool with option lists and tab navigation                                                                     |
-| `plan-mode`     | Adds read-only exploration, plan saving, and execution progress tracking; it uses `questionnaire` for clarification in TUI mode                           |
+| Extension       | What it adds                                                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `focus-ui`      | Hides successful Bash output when collapsed, keeps errors visible, and shows model, thinking level, Git, and context status in the footer |
+| `turn-recap`    | Shows a short recap after the agent settles, optionally rewrites it with a model, and can prefill the suggested next action in the editor |
+| `questionnaire` | Adds a structured single- or multi-question tool with option lists and tab navigation                                                     |
+| `plan-mode`     | Adds read-only exploration, plan saving, and execution progress tracking; it uses `questionnaire` for clarification in TUI mode           |
 
 `questionnaire` and the original `plan-mode` example come from `earendil-works/pi`. This repository keeps attribution in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The plan mode here includes additional plan-file persistence and path-safety checks.
 
@@ -19,7 +19,7 @@ A small collection of [Pi coding agent](https://pi.dev/) extensions that I use f
 
 ### Focus UI footer
 
-The footer keeps the active model, working directory, Git state, context usage, and compaction count visible in one line.
+The footer keeps the active model and thinking level, working directory, Git state, context usage, and compaction count visible in one line. Model and thinking use Pi's compact `model:level` notation.
 
 ![Focus UI footer showing the active model, Git state, and context usage](docs/images/focus-ui-footer.png)
 
@@ -78,7 +78,11 @@ Turn recap defaults to fast mode. To enable smart mode at startup, create `$PI_C
 }
 ```
 
-The `model` is optional and uses `provider/model` format. When omitted, smart mode uses the active model. `thinkingLevel` is also optional and accepts `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`; `low` is usually sufficient for the short JSON response. Smart mode sends the captured final assistant text and deterministic recap facts to that model in a separate completion; it does not append the recap request or response to the main conversation. Invalid output, unavailable models, and timeouts fall back to fast mode for that turn.
+The `model` is optional and uses `provider/model` format. When omitted, smart mode uses the active model. `thinkingLevel` is also optional and accepts `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`; `low` is usually sufficient for the short JSON response.
+
+Smart mode sends the captured final assistant text and deterministic recap facts to that model in a separate completion; it does not append the recap request or response to the main conversation. The model rewrites only the summary, suggested next action, and editor prompt. Changed files and validation status remain deterministic facts extracted from tool execution. Invalid output, provider errors, unavailable models, and timeouts fall back to fast mode for that turn.
+
+When a prepared prompt is available, the recap footer shows `Enter: 次の作業を入力欄へ`. `Enter` prefills but never submits it. If no prompt is appropriate, the footer shows only the close action. `/recap on` can reopen the latest recap.
 
 Plan mode is a convenience guardrail, not an OS-level sandbox. Its Bash allowlist blocks shell control operators and known mutating options, but the remaining read tools can still access files readable by the Pi process. Use permission rules or a sandbox when you need a stronger boundary.
 
