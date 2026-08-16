@@ -9,7 +9,7 @@ A small collection of [Pi coding agent](https://pi.dev/) extensions that I use f
 | Extension       | What it adds                                                                                                                                              |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `focus-ui`      | Hides successful Bash tool output in the collapsed view, keeps errors visible, and replaces the footer with a compact model, Git, and context status line |
-| `turn-recap`    | Shows a short recap window after the agent settles: summary, changed files, validation commands, and a suggested next action                              |
+| `turn-recap`    | Shows a short recap after the agent settles, optionally rewrites it with a model, and can prefill the suggested next action in the editor                 |
 | `questionnaire` | Adds a structured single- or multi-question tool with option lists and tab navigation                                                                     |
 | `plan-mode`     | Adds read-only exploration, plan saving, and execution progress tracking; it uses `questionnaire` for clarification in TUI mode                           |
 
@@ -25,7 +25,7 @@ The footer keeps the active model, working directory, Git state, context usage, 
 
 ### Turn recap
 
-After the agent settles, the recap window summarizes the result, changed files, validation, and suggested next action without another model call.
+After the agent settles, the recap window summarizes the result, changed files, validation, and suggested next action. Fast mode is deterministic; smart mode can rewrite the summary and prepare the next prompt with a model.
 
 ![Turn recap window showing the result, changed files, validation, and next action](docs/images/turn-recap.png)
 
@@ -59,10 +59,25 @@ To load only selected extensions, use Pi's package resource filter in `~/.pi/age
 ## Usage
 
 - `Ctrl+O` expands or collapses tool output. With `focus-ui`, successful Bash output is hidden while collapsed; failed commands remain visible.
-- `/recap on` and `/recap off` toggle the recap window for the current session.
+- `/recap fast` uses the deterministic recap without another model call.
+- `/recap smart [provider/model]` uses the selected model, or the configured model when omitted, to rewrite the summary and prepare the next prompt. Use `/recap smart current` to select the active model.
+- `/recap on`, `/recap off`, and `/recap status` control or inspect the current session mode.
+- In a recap with a prepared prompt, `Enter` puts the next action in Pi's editor without submitting it. `Esc` closes the recap. Existing editor text is never overwritten without confirmation.
 - `/plan` or `Ctrl+Alt+P` toggles plan mode.
 - `/plan-save [relative-file.md]` saves the current plan without overwriting an explicit path.
 - `/todos` shows plan execution progress.
+
+Turn recap defaults to fast mode. To enable smart mode at startup, create `$PI_CODING_AGENT_DIR/turn-recap.json` (normally `~/.pi/agent/turn-recap.json`):
+
+```json
+{
+  "mode": "smart",
+  "model": "switchyard/weak-only",
+  "timeoutMs": 30000
+}
+```
+
+The `model` is optional and uses `provider/model` format. When omitted, smart mode uses the active model. Smart mode sends the captured final assistant text and deterministic recap facts to that model in a separate completion; it does not append the recap request or response to the main conversation. Invalid output, unavailable models, and timeouts fall back to fast mode for that turn.
 
 Plan mode is a convenience guardrail, not an OS-level sandbox. Its Bash allowlist blocks shell control operators and known mutating options, but the remaining read tools can still access files readable by the Pi process. Use permission rules or a sandbox when you need a stronger boundary.
 

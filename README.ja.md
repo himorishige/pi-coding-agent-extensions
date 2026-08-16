@@ -9,7 +9,7 @@
 | extension       | 追加するもの                                                                                                                           |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `focus-ui`      | 折りたたみ時の Bash 成功出力を隠し、エラーは表示したままにします。Footer はモデル、Git、コンテキスト使用率をまとめた表示へ置き換えます |
-| `turn-recap`    | agent の処理が落ち着いた後に、作業要約、変更ファイル、検証コマンド、次の作業を短いウィンドウで表示します                               |
+| `turn-recap`    | agent の処理後に短い recap を表示し、任意でモデルによる要約と次の作業の入力欄へのセットを行います                                      |
 | `questionnaire` | 単一または複数の質問を、選択肢とタブ付きの TUI で確認する tool を追加します                                                            |
 | `plan-mode`     | 読み取り専用の調査、plan ファイルの保存、実行中の進捗表示を追加します。TUI での確認には `questionnaire` を使います                     |
 
@@ -25,7 +25,7 @@
 
 ### Turn Recap
 
-agent の処理が落ち着いた後に、結果、変更ファイル、検証、次の作業を追加のモデル呼び出しなしで表示します。
+agent の処理が落ち着いた後に、結果、変更ファイル、検証、次の作業を表示します。fast mode は決定的なロジックだけを使い、smart mode はモデルで要約と次の prompt を生成します。
 
 ![結果、変更ファイル、検証、次の作業を表示する Turn Recap ウィンドウ](docs/images/turn-recap.png)
 
@@ -59,10 +59,25 @@ pi update --extensions
 ## 使い方
 
 - `Ctrl+O` で tool 出力を展開できます。`focus-ui` の折りたたみ表示では Bash の成功出力を隠し、失敗したコマンドは表示します。
-- `/recap on` と `/recap off` で、現在の session における recap 表示を切り替えます。
+- `/recap fast` は、追加のモデル呼び出しなしで決定的な recap を生成します。
+- `/recap smart [provider/model]` は、指定したモデルで要約と次の prompt を生成します。モデルを省略した場合は設定済みのモデルを維持し、`/recap smart current` で利用中のモデルへ切り替えます。
+- `/recap on`、`/recap off`、`/recap status` で、現在の session における mode を操作・確認できます。
+- 次の prompt がある recap で `Enter` を押すと、自動送信せず Pi の入力欄へセットします。`Esc` は recap を閉じます。入力欄に下書きがある場合は、確認なしに上書きしません。
 - `/plan` または `Ctrl+Alt+P` で plan mode を切り替えます。
 - `/plan-save [relative-file.md]` で、既存の明示パスを上書きせずに plan を保存します。
 - `/todos` で plan の進捗を表示します。
+
+turn recap の既定は fast mode です。起動時から smart mode を使う場合は、`$PI_CODING_AGENT_DIR/turn-recap.json`（通常は `~/.pi/agent/turn-recap.json`）を作成します。
+
+```json
+{
+  "mode": "smart",
+  "model": "switchyard/weak-only",
+  "timeoutMs": 30000
+}
+```
+
+`model` は省略可能で、`provider/model` 形式で指定します。省略時は利用中のモデルを使います。smart mode は、取得した最終回答と決定的に抽出した recap の事実を別の completion としてモデルへ送ります。要約の要求と応答はメインの会話履歴へ追加しません。出力形式の不正、モデルの利用不可、timeout が発生したターンは fast mode へフォールバックします。
 
 plan mode は操作ミスを減らすための guardrail であり、OS-level sandbox ではありません。Bash の shell control operator と既知の書き込み option は拒否しますが、残した read tool は Pi process が読めるファイルへアクセスできます。強い境界が必要な場合は permission rule または sandbox を併用してください。
 
