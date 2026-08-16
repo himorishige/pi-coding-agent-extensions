@@ -1,0 +1,44 @@
+{
+  "name": "pi-coding-agent-extensions",
+  "version": "0.1.0",
+  "description": "A small collection of Pi coding agent extensions for focused daily development",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/pi-coding-agent-extensions.git"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-coding-agent",
+    "coding-agent",
+    "extensions"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/focus-ui.ts",
+      "./extensions/turn-recap.ts",
+      "./extensions/questionnaire.ts",
+      "./extensions/plan-mode/index.ts"
+    ]
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.84.2",
+    "@types/node": "^22.0.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}

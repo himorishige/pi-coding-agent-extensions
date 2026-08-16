@@ -1,0 +1,70 @@
+# Pi coding agent extensions
+
+English | [日本語](README.ja.md)
+
+A small collection of [Pi coding agent](https://pi.dev/) extensions that I use for focused daily development.
+
+## Extensions
+
+| Extension       | What it adds                                                                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `focus-ui`      | Hides successful Bash tool output in the collapsed view, keeps errors visible, and replaces the footer with a compact model, Git, and context status line |
+| `turn-recap`    | Shows a short recap window after the agent settles: summary, changed files, validation commands, and a suggested next action                              |
+| `questionnaire` | Adds a structured single- or multi-question tool with option lists and tab navigation                                                                     |
+| `plan-mode`     | Adds read-only exploration, plan saving, and execution progress tracking; it uses `questionnaire` for clarification in TUI mode                           |
+
+`questionnaire` and the original `plan-mode` example come from `earendil-works/pi`. This repository keeps attribution in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The plan mode here includes additional plan-file persistence and path-safety checks.
+
+## Install
+
+Pi packages execute code with your user permissions. Review the source before installing.
+
+```bash
+pi install git:github.com/himorishige/pi-coding-agent-extensions
+```
+
+Restart Pi after installation. Update later with:
+
+```bash
+pi update --extensions
+```
+
+To load only selected extensions, use Pi's package resource filter in `~/.pi/agent/settings.json`:
+
+```json
+{
+  "packages": [
+    {
+      "source": "git:github.com/himorishige/pi-coding-agent-extensions",
+      "extensions": ["+extensions/focus-ui.ts", "+extensions/turn-recap.ts"]
+    }
+  ]
+}
+```
+
+## Usage
+
+- `Ctrl+O` expands or collapses tool output. With `focus-ui`, successful Bash output is hidden while collapsed; failed commands remain visible.
+- `/recap on` and `/recap off` toggle the recap window for the current session.
+- `/plan` or `Ctrl+Alt+P` toggles plan mode.
+- `/plan-save [relative-file.md]` saves the current plan without overwriting an explicit path.
+- `/todos` shows plan execution progress.
+
+Plan mode is a convenience guardrail, not an OS-level sandbox. Its Bash allowlist blocks shell control operators and known mutating options, but the remaining read tools can still access files readable by the Pi process. Use permission rules or a sandbox when you need a stronger boundary.
+
+Plan files default to `plans/{date}-{slug}.md`. A trusted project can override this in `.pi/plan-mode.json`:
+
+```json
+{
+  "outputDirectory": "plans",
+  "fileNamePattern": "{date}-{slug}.md"
+}
+```
+
+## Compatibility
+
+The current version is tested with `@earendil-works/pi-coding-agent` 0.84.2. Pi's extension API changes quickly, so check the repository when upgrading Pi.
+
+## License
+
+MIT. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for adapted upstream examples.
