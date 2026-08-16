@@ -259,6 +259,9 @@ async function createHarness(options: HarnessOptions = {}) {
     get editorText() {
       return editorText;
     },
+    overwriteEditorText(value: string) {
+      editorText = value;
+    },
     async beginTurn() {
       await handlers.get("agent_start")?.({}, ctx);
       await handlers.get("message_end")?.(
@@ -290,6 +293,7 @@ test("smart mode uses a separate completion and Enter prefills the editor", asyn
   try {
     await harness.beginTurn();
     await harness.settle();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     assert.equal(harness.completionCalls, 1);
     assert.equal(harness.lastRequestOptions?.reasoningEffort, "low");
@@ -297,6 +301,20 @@ test("smart mode uses a separate completion and Enter prefills the editor", asyn
     assert.equal(harness.lastRequestOptions?.temperature, undefined);
     assert.equal(harness.editorText, "READMEに使い方を追記してください。");
     assert.equal(harness.statuses.at(-1), undefined);
+  } finally {
+    await harness.cleanup();
+  }
+});
+
+test("deferred prefill survives editor cleanup after agent_settled", async () => {
+  const harness = await createHarness();
+  try {
+    await harness.beginTurn();
+    await harness.settle();
+    harness.overwriteEditorText("");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.equal(harness.editorText, "READMEに使い方を追記してください。");
   } finally {
     await harness.cleanup();
   }

@@ -651,7 +651,11 @@ export default function turnRecap(pi: ExtensionAPI) {
     if (ctx.mode === "tui") ctx.ui.setWidget(WIDGET_KEY, undefined);
   };
 
-  const showRecap = async (ctx: ExtensionContext, recap: Recap) => {
+  const showRecap = async (
+    ctx: ExtensionContext,
+    recap: Recap,
+    deferPrefill = false,
+  ) => {
     if (mode === "off" || ctx.mode !== "tui" || recap.lines.length === 0) {
       return;
     }
@@ -714,8 +718,21 @@ export default function turnRecap(pi: ExtensionAPI) {
       if (!append) return;
     }
 
-    ctx.ui.setEditorText(mergeEditorText(current, recap.nextPrompt));
-    ctx.ui.notify("次の作業を入力欄へ追加しました", "info");
+    const applyPrompt = () => {
+      const prompt = recap.nextPrompt!;
+      const latest = ctx.ui.getEditorText();
+      if (latest.trim() === prompt.trim()) {
+        ctx.ui.notify("次の作業は入力欄に設定済みです", "info");
+        return;
+      }
+      ctx.ui.setEditorText(mergeEditorText(latest, prompt));
+      ctx.ui.notify("次の作業を入力欄へ追加しました", "info");
+    };
+    if (deferPrefill) {
+      setTimeout(applyPrompt, 0);
+    } else {
+      applyPrompt();
+    }
   };
 
   pi.on("session_start", async (_event, ctx) => {
@@ -858,7 +875,7 @@ export default function turnRecap(pi: ExtensionAPI) {
 
     if (runEpoch !== settledEpoch) return;
     lastRecap = recap;
-    await showRecap(ctx, recap);
+    await showRecap(ctx, recap, true);
   });
 
   pi.registerCommand("recap", {
