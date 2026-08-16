@@ -403,35 +403,78 @@ function generatedLine(value: string, maxLength: number): string {
     .slice(0, maxLength);
 }
 
-export function parseSmartRecap(text: string): SmartRecap | undefined {
-  const withoutFence = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "");
-  const start = withoutFence.indexOf("{");
-  const end = withoutFence.lastIndexOf("}");
-  if (start < 0 || end <= start) return undefined;
+function jsonObjectCandidates(text: string): string[] {
+  const candidates: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
 
-  try {
-    const parsed = JSON.parse(withoutFence.slice(start, end + 1)) as unknown;
-    if (parsed === null || typeof parsed !== "object") return undefined;
-    const record = parsed as Record<string, unknown>;
-    if (
-      typeof record.summary !== "string" ||
-      typeof record.next !== "string" ||
-      typeof record.prompt !== "string"
-    ) {
-      return undefined;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') inString = false;
+      continue;
     }
-
-    const summary = generatedLine(record.summary, 120);
-    const next = generatedLine(record.next, 120);
-    const prompt = generatedLine(record.prompt, 400);
-    if (!summary || !next) return undefined;
-    return { summary, next, prompt };
-  } catch {
-    return undefined;
+    if (character === '"') {
+      inString = true;
+    } else if (character === "{") {
+      if (depth === 0) start = index;
+      depth += 1;
+    } else if (character === "}" && depth > 0) {
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        candidates.push(text.slice(start, index + 1));
+        start = -1;
+      }
+    }
   }
+  return candidates;
+}
+
+function firstString(
+  record: Record<string, unknown>,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string") return value;
+  }
+  return undefined;
+}
+
+export function parseSmartRecap(text: string): SmartRecap | undefined {
+  for (const candidate of jsonObjectCandidates(text).reverse()) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+      if (parsed === null || typeof parsed !== "object") continue;
+      const record = parsed as Record<string, unknown>;
+      const rawSummary = firstString(record, ["summary", "result", "recap"]);
+      const rawNext = firstString(record, [
+        "next",
+        "nextAction",
+        "next_action",
+      ]);
+      const rawPrompt = firstString(record, [
+        "prompt",
+        "nextPrompt",
+        "next_prompt",
+      ]);
+      if (rawSummary === undefined) continue;
+
+      const summary = generatedLine(rawSummary, 120);
+      const next = rawNext === undefined ? "" : generatedLine(rawNext, 120);
+      const prompt =
+        rawPrompt === undefined ? "" : generatedLine(rawPrompt, 400);
+      if (!summary || summary === "...") continue;
+      return { summary, next, prompt };
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
 }
 
 export function mergeSmartRecap(fallback: Recap, smart: SmartRecap): Recap {
@@ -439,7 +482,7 @@ export function mergeSmartRecap(fallback: Recap, smart: SmartRecap): Recap {
     if (line.kind === "summary" || line.kind === "waiting") {
       return { kind: "summary" as const, text: smart.summary };
     }
-    if (line.kind === "next") {
+    if (line.kind === "next" && smart.next) {
       return { ...line, text: smart.next };
     }
     return line;

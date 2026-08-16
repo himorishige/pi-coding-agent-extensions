@@ -77,12 +77,26 @@ test("parses a fenced smart recap and removes inline Markdown", () => {
   });
 });
 
-test("rejects malformed smart recap output", () => {
+test("accepts an omitted prompt and rejects output without a summary", () => {
+  assert.deepEqual(parseSmartRecap('{"summary":"done","next":"review"}'), {
+    summary: "done",
+    next: "review",
+    prompt: "",
+  });
   assert.equal(parseSmartRecap("not json"), undefined);
-  assert.equal(
-    parseSmartRecap('{"summary":"done","next":"review"}'),
-    undefined,
+  assert.equal(parseSmartRecap('{"next":"review"}'), undefined);
+});
+
+test("finds a valid object among prose and accepts common key aliases", () => {
+  const parsed = parseSmartRecap(
+    'Example: {"format":"ignored"}\nResult:\n```json\n{"recap":"done","next_action":"review","next_prompt":"Review it."}\n```',
   );
+
+  assert.deepEqual(parsed, {
+    summary: "done",
+    next: "review",
+    prompt: "Review it.",
+  });
 });
 
 test("merges smart prose while preserving deterministic facts", () => {
@@ -110,12 +124,13 @@ test("merges smart prose while preserving deterministic facts", () => {
   assert.equal(recap.nextPrompt, "READMEに設定方法を追記してください。");
 });
 
-test("an empty smart prompt disables editor prefill", () => {
+test("an empty smart prompt disables prefill and an empty next keeps fallback", () => {
   const recap = mergeSmartRecap(
     { lines: [{ kind: "next", text: "再起動する" }] },
-    { summary: "設定を反映しました。", next: "Piを再起動する", prompt: "" },
+    { summary: "設定を反映しました。", next: "", prompt: "" },
   );
 
+  assert.deepEqual(recap.lines, [{ kind: "next", text: "再起動する" }]);
   assert.equal(recap.nextPrompt, undefined);
 });
 
