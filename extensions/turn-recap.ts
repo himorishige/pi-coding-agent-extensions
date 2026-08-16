@@ -602,12 +602,18 @@ async function generateSmartRecap(
       {
         signal: controller.signal,
         maxTokens: SMART_MAX_TOKENS,
-        temperature: 0.1,
         reasoningEffort: thinkingLevel,
         cacheRetention: "none",
         sessionId: uuidv7(),
       },
     );
+    if (response.stopReason === "error") {
+      throw new Error(response.errorMessage ?? "model completion failed");
+    }
+    if (response.stopReason === "aborted") {
+      throw new Error("model completion was aborted");
+    }
+
     const text = response.content
       .filter(
         (content): content is { type: "text"; text: string } =>
@@ -621,7 +627,7 @@ async function generateSmartRecap(
         ...new Set(response.content.map((content) => content.type)),
       ].join(",");
       throw new Error(
-        `model returned an invalid recap (text=${text.length}, blocks=${blockTypes || "none"})`,
+        `model returned an invalid recap (stop=${response.stopReason}, text=${text.length}, blocks=${blockTypes || "none"})`,
       );
     }
     return mergeSmartRecap(fallback, smart);

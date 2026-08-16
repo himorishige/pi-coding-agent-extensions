@@ -294,6 +294,7 @@ test("smart mode uses a separate completion and Enter prefills the editor", asyn
     assert.equal(harness.completionCalls, 1);
     assert.equal(harness.lastRequestOptions?.reasoningEffort, "low");
     assert.equal(harness.lastRequestOptions?.maxTokens, 1_024);
+    assert.equal(harness.lastRequestOptions?.temperature, undefined);
     assert.equal(harness.editorText, "READMEに使い方を追記してください。");
     assert.equal(harness.statuses.at(-1), undefined);
   } finally {
@@ -325,6 +326,27 @@ test("a new input aborts a stale smart recap without opening its modal", async (
     assert.equal(harness.customCalls, 0);
     assert.equal(harness.editorText, "");
     assert.equal(harness.statuses.at(-1), undefined);
+  } finally {
+    await harness.cleanup();
+  }
+});
+
+test("a provider error falls back with its actionable message", async () => {
+  const harness = await createHarness({
+    completion: async () => ({
+      content: [],
+      stopReason: "error",
+      errorMessage: "Unsupported parameter: temperature",
+    }),
+  });
+  try {
+    await harness.beginTurn();
+    await harness.settle();
+
+    assert.match(
+      harness.notifications.join("\n"),
+      /Unsupported parameter: temperature/,
+    );
   } finally {
     await harness.cleanup();
   }
