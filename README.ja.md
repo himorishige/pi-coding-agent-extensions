@@ -15,6 +15,20 @@
 
 `questionnaire` と `plan-mode` の初期実装は `earendil-works/pi` の example を基にしています。帰属とライセンスは [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しました。このリポジトリの plan mode には、plan ファイルの保存と出力先の安全検査を追加しています。
 
+## 表示例
+
+### Focus UI Footer
+
+利用中のモデル、作業ディレクトリ、Git の状態、コンテキスト使用率、compaction 回数を 1 行で確認できます。
+
+![利用中のモデル、Git の状態、コンテキスト使用率を表示する Focus UI Footer](docs/images/focus-ui-footer.png)
+
+### Turn Recap
+
+agent の処理が落ち着いた後に、結果、変更ファイル、検証、次の作業を追加のモデル呼び出しなしで表示します。
+
+![結果、変更ファイル、検証、次の作業を表示する Turn Recap ウィンドウ](docs/images/turn-recap.png)
+
 ## インストール
 
 Pi package はユーザー権限でコードを実行します。インストール前にソースを確認してください。

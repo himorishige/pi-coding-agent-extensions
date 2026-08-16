@@ -15,6 +15,20 @@ A small collection of [Pi coding agent](https://pi.dev/) extensions that I use f
 
 `questionnaire` and the original `plan-mode` example come from `earendil-works/pi`. This repository keeps attribution in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The plan mode here includes additional plan-file persistence and path-safety checks.
 
+## Preview
+
+### Focus UI footer
+
+The footer keeps the active model, working directory, Git state, context usage, and compaction count visible in one line.
+
+![Focus UI footer showing the active model, Git state, and context usage](docs/images/focus-ui-footer.png)
+
+### Turn recap
+
+After the agent settles, the recap window summarizes the result, changed files, validation, and suggested next action without another model call.
+
+![Turn recap window showing the result, changed files, validation, and next action](docs/images/turn-recap.png)
+
 ## Install
 
 Pi packages execute code with your user permissions. Review the source before installing.
