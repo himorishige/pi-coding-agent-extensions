@@ -21,7 +21,7 @@ A small collection of [Pi coding agent](https://pi.dev/) extensions that I use f
 
 The footer keeps the active model and thinking level, working directory, Git state, context usage, and compaction count visible in one line. Model and thinking use Pi's compact `model:level` notation.
 
-![Focus UI footer showing the active model, Git state, and context usage](docs/images/focus-ui-footer.png)
+![Focus UI footer showing the active model, thinking level, Git state, and context usage](docs/images/focus-ui-footer.png)
 
 ### Turn recap
 

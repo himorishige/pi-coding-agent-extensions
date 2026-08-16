@@ -21,7 +21,7 @@
 
 利用中のモデルと thinking level、作業ディレクトリ、Git の状態、コンテキスト使用率、compaction 回数を 1 行で確認できます。モデルと thinking は Pi と同じ `model:level` 形式で表示します。
 
-![利用中のモデル、Git の状態、コンテキスト使用率を表示する Focus UI Footer](docs/images/focus-ui-footer.png)
+![利用中のモデル、thinking level、Git の状態、コンテキスト使用率を表示する Focus UI Footer](docs/images/focus-ui-footer.png)
 
 ### Turn Recap
 
