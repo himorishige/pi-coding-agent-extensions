@@ -34,6 +34,13 @@ export function formatModelLabel(
   return `${model}:${thinkingLevel || "off"}`;
 }
 
+export function formatExtensionStatusLabels(
+  statuses: ReadonlyMap<string, string> | undefined,
+): string[] {
+  if (!statuses) return [];
+  return [...statuses.values()].filter((status) => status.trim().length > 0);
+}
+
 function getTextOutput(result: {
   content: Array<{ type: string; text?: string }>;
 }): string {
@@ -193,7 +200,11 @@ export default function focusUi(pi: ExtensionAPI) {
           );
           const branch = footerData.getGitBranch();
 
+          const modeStatuses = formatExtensionStatusLabels(
+            footerData.getExtensionStatuses(),
+          );
           const leftParts = [
+            ...modeStatuses,
             theme.fg("accent", theme.bold(`[${model}]`)),
             theme.fg("text", theme.bold(directory)),
           ];
