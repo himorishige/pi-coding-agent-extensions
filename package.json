@@ -1,6 +1,6 @@
 {
   "name": "pi-coding-agent-extensions",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A small collection of Pi coding agent extensions for focused daily development",
   "type": "module",
   "license": "MIT",
@@ -17,7 +17,6 @@
   "pi": {
     "extensions": [
       "./extensions/focus-ui.ts",
-      "./extensions/turn-recap.ts",
       "./extensions/questionnaire.ts",
       "./extensions/plan-mode/index.ts"
     ]
