@@ -18,6 +18,7 @@
     "extensions": [
       "./extensions/focus-ui.ts",
       "./extensions/questionnaire.ts",
+      "./extensions/session-recall.ts",
       "./extensions/plan-mode/index.ts"
     ]
   },
